@@ -1,0 +1,19 @@
+{
+  "name": "react-controlled-input",
+  "version": "0.1.0",
+  "description": "A low-level input component that allows control over internal properties such as selection",
+  "main": "lib/index.js",
+  "repository": "https://github.com/jchitel/react-controlled-input.git",
+  "author": "Jake Chitel <jchitel@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/enzyme": "^3.1.13",
+    "@types/jest": "^23.3.1",
+    "enzyme": "^3.5.0",
+    "jest": "^23.5.0",
+    "typescript": "^3.0.1"
+  },
+  "dependencies": {
+    "react": ">=16"
+  }
+}
