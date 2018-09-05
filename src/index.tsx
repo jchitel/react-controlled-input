@@ -10,7 +10,7 @@ export interface ControlledInputProps extends React.InputHTMLAttributes<HTMLInpu
     /**
      * The end (non-inclusive) of the highlighted text selection. If this is specified, `selectionStart` is also required.
      * If this is equal to `selectionStart`, that means the current selection is just a cursor (0-width selection).
-     * If this is less than `selectionStart`, this means the selection is "backwards", which is completely valid.
+     * This value can be less than `selectionStart`, indicating a backwards selection.
      */
     selectionEnd?: number;
     /**
@@ -86,13 +86,57 @@ export interface TextChangeEvent {
     isFocused: boolean;
 }
 
+interface ControlledInputState {
+    paste: boolean;
+    isFocused: boolean;
+    keyDown: number | null;
+    mouseDown: boolean;
+}
+
 /**
  * An input providing fine control over the text value and selection range of an `<input />` element.
  * The selection range can be provided as props, and the internal selection range will always reflect those props.
  * User action which would change the text value or selection range will call the `onTextChange` prop with
  * information about the change, so that the controlling component can respond appropriately.
  */
-export default class ControlledInput extends React.PureComponent<ControlledInputProps> {
+export default class ControlledInput extends React.PureComponent<ControlledInputProps, ControlledInputState> {
+    state: ControlledInputState = {
+        paste: false,
+        isFocused: false,
+        keyDown: null,
+        mouseDown: false
+    };
+
+    onPaste = () => this.setState({ paste: true });
+    onFocus = () => this.setState({ isFocused: true });
+    onBlur = () => this.setState({ isFocused: false });
+
+    /**
+     * Any change to either the input value or the selection range will always fire a select event.
+     * At this point, the value and range will be set, and a text change event can be fired.
+     * 
+     * These are the event types that can change the value:
+     * - keypress (generic typing and key combos)
+     * - cut/paste
+     * 
+     * These are the event types that can change the selection:
+     * - anything that can change the value
+     * - keypress (arrow keys, ctrl+keys, alt+keys, meta+keys, shift+keys, ctrl+A)
+     * - click/drag
+     */
+    onSelect = (e: React.SyntheticEvent<HTMLInputElement>) => {
+        if (this.props.onTextChange) {
+            this.props.onTextChange({
+                ...this.computeTextChange,
+                selectionStart: e.currentTarget.selectionStart,
+                selectionEnd: e.currentTarget.selectionEnd,
+                paste: this.state.paste,
+                isFocused: this.state.isFocused
+            });
+        }
+        if (this.state.paste) this.setState({ paste: false });
+    }
+
     info = ({ type, currentTarget: { value, selectionStart, selectionEnd, selectionDirection }, bubbles, cancelable, defaultPrevented, eventPhase, isTrusted, nativeEvent, preventDefault, isDefaultPrevented, stopPropagation, isPropagationStopped, persist, target, timeStamp, ...event }: React.SyntheticEvent<HTMLInputElement>) =>
         type.includes('key')
             ? console.log(type, event)
@@ -100,38 +144,21 @@ export default class ControlledInput extends React.PureComponent<ControlledInput
 
     render() {
         return <input
-            /* Clipboard Events */
-            onCut={this.info}
-            onPaste={this.info}
+            onPaste={this.onPaste}
+            onFocus={this.onFocus}
+            onBlur={this.onBlur}
 
-            /* Focus Events  */
-            onFocus={this.info}
-            onBlur={this.info}
-
-            /* Form Events  */
+            /* Form Events */
             onChange={this.info}
-            onInput={this.info}
-            onReset={this.info}
-            onSubmit={this.info}
-            onInvalid={this.info}
 
             /* Keyboard Events  */
             onKeyDown={this.info}
-            onKeyPress={this.info}
             onKeyUp={this.info}
 
             /* MouseEvents  */
             onClick={this.info}
             onContextMenu={this.info}
             onDoubleClick={this.info}
-            onDrag={this.info}
-            onDragEnd={this.info}
-            onDragEnter={this.info}
-            onDragExit={this.info}
-            onDragLeave={this.info}
-            onDragOver={this.info}
-            onDragStart={this.info}
-            onDrop={this.info}
             onMouseDown={this.info}
             onMouseMove={this.info}
             onMouseOut={this.info}
